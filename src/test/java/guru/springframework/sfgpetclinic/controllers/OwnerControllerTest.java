@@ -14,8 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.inOrder;
 
 @ExtendWith(MockitoExtension.class)
 class OwnerControllerTest {
@@ -29,6 +30,9 @@ class OwnerControllerTest {
     @Mock
     BindingResult bindingResult;
 
+    @Mock
+    Model model;
+
     @InjectMocks
     OwnerController controller;
 
@@ -39,7 +43,7 @@ class OwnerControllerTest {
     void setUp() {
         given(ownerService.findAllByLastNameLike(stringArgumentCaptor.capture()))
                 .willAnswer(
-                            invocation -> {
+                        invocation -> {
                             List<Owner> owners = new ArrayList<>();
                             String name = invocation.getArgument(0);
                             if (name.equals("%lastname%")) {
@@ -97,6 +101,7 @@ class OwnerControllerTest {
         //then
         assertThat("%DontFindMe%").isEqualToIgnoringCase(stringArgumentCaptor.getValue());
         assertThat("owners/findOwners").isEqualToIgnoringCase(viewName);
+
     }
 
     @Test
@@ -104,11 +109,16 @@ class OwnerControllerTest {
         //given
         Owner owner = new Owner(1l, "name", "FindMe");
         //when
-        String viewName = controller.processFindForm(owner, bindingResult, Mockito.mock(Model.class));
+        String viewName = controller.processFindForm(owner, bindingResult, model);
+        InOrder inOrder = inOrder(ownerService, model);
 
         //then
         assertThat("%FindMe%").isEqualToIgnoringCase(stringArgumentCaptor.getValue());
         assertThat("owners/ownersList").isEqualToIgnoringCase(viewName);
+
+        //InOrder Assertions
+        inOrder.verify(ownerService).findAllByLastNameLike(anyString());
+        inOrder.verify(model).addAttribute(anyString(), anyList());
     }
 
 
